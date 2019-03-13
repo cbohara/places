@@ -3,9 +3,9 @@ import requests
 import json
 from geopy.geocoders import Nominatim
 
-def get_lat_long(config):
+def get_lat_long(lat_long, location):
 	"""Get latitude and longitude for API search"""
-	if config.lat_long:
+	if lat_long:
 		return (float(value) for value in config.lat_long.split(","))
 	else:
 		geolocator = Nominatim()
@@ -76,12 +76,12 @@ def write_csv(search, latitude, longitude, places):
 			f.write(line+"\n")
 
 def execute(config):
-	latitude, longitude = get_lat_long(config)
+	latitude, longitude = get_lat_long(config.lat_long, config.location)
 	app_id = config.app_id
 	app_code = config.app_code
 	search = config.search
 
-	if config.api_call:
+	if config.api_enabled:
 		places = get_places(get_here_api_data(app_id, app_code, search, latitude, longitude, config))
 	else:
 		places = get_places(read_json(search, latitude, longitude))
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 	api.add('--app_id', required=True, help='here API app id')
 	api.add('--app_code', required=True, help='here API app code')
 	api.add('--search', help='specify search word or specific location')
-	api.add('--api_call', default=False, help='for testing use local json file to avoid another API call', action='store_true')
+	api.add('--api_enabled', default=False, help='for testing use local json file to avoid another API call', action='store_true')
 
 	geocode = config_parser.add_mutually_exclusive_group(required=True)
 	geocode.add('--lat_long', help='specific latitude,longitude as a single value "32.8242404,-117.389167"')

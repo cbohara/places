@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	config_parser.add('--app_code', required=True, help='here api APP CODE')
 	config_parser.add('--query', help='can specify search word or specific location')
 	config_parser.add('--lat_long', help='provide specific latitude longtitude to search around as a single value i.e. "32.8242404,-117.389167"')
-	config_parser.add('--api_call', default=False, help='allow user to use local json file to avoid another API call')
+	config_parser.add('--api_call', default=False, help='use local json file to avoid another API call')
 
 	config = config_parser.parse_args()
 	for key, value in vars(config).items():

@@ -3,48 +3,36 @@ import requests
 import json
 from geopy.geocoders import Nominatim
 
-def get_query(neighborhood, city, state, country):
-	"""Piece together location options for a location query"""
-	all_args = [neighborhood, city, state, country]
-	valid_args = [arg for arg in all_args if arg is not None]
-	if len(valid_args) > 1:
-		return " ".join(valid_args)
-	elif len(valid_args) == 1:
-		return valid_args[0]
-	else:
-		raise Exception("No location input provided")
 
-def get_lat_long_from_osm(query):
+def get_lat_long_from_osm(location):
 	"""Leverage open source OpenStreetMap API for geocoding"""
 	geolocator = Nominatim(user_agent="my_app")
-	response = geolocator.geocode(query)
+	response = geolocator.geocode(location)
 	if response:
 		return (response.latitude, response.longitude)
 	else:
 		raise Exception("Unable to generate latitude and longitude from location input")
 
-def get_lat_long(latitude, longitude, location, neighborhood, city, state, country):
+def get_lat_long(lat_long, location):
 	"""Get latitude and longitude for Here API search"""
 	if latitude and longitude:
 		return (float(latitude), float(longitude))
-	else:
-		if location:
-			query = location
-		else:
-			query = get_query(neighborhood, city, state, country)
-		return get_lat_long_from_osm(query)
+	elif location:
+		return get_lat_long_from_osm(location)
 
 def write_json(json_data, search, latitude, longitude):
 	"""Write places to csv file"""
 	with open("json/{}.{}.{}.json".format(search, latitude, longitude), "w") as f:
 		f.write(json_data)
 
-def get_here_api_data(app_id, app_code, search, latitude, longitude, config):
+def get_here_api_data(app_id, app_code, search, latitude, longitude):
 	"""Get json data from here API and save to local file if enabled"""
 	url = "https://places.cit.api.here.com/places/v1/browse?"
-	url += "&q={}".format(search)
-	url += "&at={},{}".format(latitude, longitude)
-	url += "&app_id={}&app_code={}".format(config.app_id, config.app_code)
+	if search:
+		url += "&q={}".format(search)
+	if latitude and longitude:
+		url += "&at={},{}".format(latitude, longitude)
+	url += "&app_id={}&app_code={}".format(app_id, app_code)
 	json_data = requests.get(url).text
 
 	if config.save_json:
@@ -98,7 +86,7 @@ def write_csv(search, latitude, longitude, places):
 			f.write(line+"\n")
 
 def execute(config):
-	latitude, longitude = get_lat_long(config.latitude, config.longitude, config.location, config.neighborhood, config.city, config.state, config.country)
+	latitude, longitude = get_lat_long(config.lat_long, config.location)
 	app_id = config.app_id
 	app_code = config.app_code
 	search = config.search
@@ -123,14 +111,9 @@ if __name__ == "__main__":
 	api.add('--search', help='specify search word or specific location')
 	api.add('--api_enabled', default=False, help='for testing use local json file to avoid another API call', action='store_true')
 
-	geocode = config_parser.add_argument_group()
-	geocode.add('--latitude', help='specific start latitude')
-	geocode.add('--longitude', help='specific start longitude')
+	geocode = config_parser.add_mutually_exclusive_group(required=True)
+	geocode.add('--lat_long', help='specific start latitude,longitude')
 	geocode.add('--location', help='location to search around - does not have to be a specific address')
-	geocode.add('--neighborhood', help='neighborhood to search within')
-	geocode.add('--city', help='city to search within')
-	geocode.add('--state', help='state to search within')
-	geocode.add('--country', help='country to search within')
 
 	storage = config_parser.add_argument_group()
 	storage.add('--save_json', default=True, help='save json from here API')

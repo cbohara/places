@@ -3,24 +3,25 @@ import requests
 import json
 from geopy.geocoders import Nominatim
 
-def get_query(*args):
+def get_query(neighborhood, city, state, country):
 	"""Piece together location options for a location query"""
-	if len(args) == 1:
-		return str(args[0])
-	else:
-		valid_args = [arg for arg in args if arg is not None]
+	all_args = [neighborhood, city, state, country]
+	valid_args = [arg for arg in all_args if arg is not None]
+	if len(valid_args) > 1:
 		return " ".join(valid_args)
+	else:
+		return valid_args[0]
 
 def get_lat_long_from_osm(query):
 	"""Leverage open source OpenStreetMap API for geocoding"""
-	geolocator = Nominatim(user_agent="my-application")
+	geolocator = Nominatim(user_agent="my_app")
 	response = geolocator.geocode(query)
 	if response:
 		return (response.latitude, response.longitude)
 	else:
 		raise Exception("Unable to generate latitude and longitude from location input")
 
-def get_lat_long(latitude, longitude, location, *args):
+def get_lat_long(latitude, longitude, location, neighborhood, city, state, country):
 	"""Get latitude and longitude for Here API search"""
 	if latitude and longitude:
 		return (float(latitude), float(longitude))
@@ -28,7 +29,7 @@ def get_lat_long(latitude, longitude, location, *args):
 		if location:
 			query = location
 		else:
-			query = get_query(args)
+			query = get_query(neighborhood, city, state, country)
 		return get_lat_long_from_osm(query)
 
 def write_json(json_data, search, latitude, longitude):

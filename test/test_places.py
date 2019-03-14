@@ -30,22 +30,22 @@ def test_get_lat_long_from_osm_city_only():
 def test_get_lat_long_from_lat_long_arg():
 	latitude = "32.8242404"
 	longitude = "-117.389167"
-	latitude, longitude = places.get_lat_long(latitude, longitude, None)
+	latitude, longitude = places.get_lat_long(latitude, longitude, None, None, None, None, None)
 	assert latitude == 32.8242404
 	assert longitude == -117.389167
 
 def test_get_lat_long_from_location():
 	location = "Pacific Beach San Diego"
-	latitude, longitude = places.get_lat_long(None, None, location)
+	latitude, longitude = places.get_lat_long(None, None, location, None, None, None, None)
 	assert latitude == 32.7978268
 	assert longitude == -117.2403183
 
 def test_get_lat_long_location_overrides_other_args():
-	latitude, longitude = places.get_lat_long(None, None, "San Diego", "Los Angeles")
+	latitude, longitude = places.get_lat_long(None, None, "San Diego", "Los Angeles", None, None, None)
 	assert latitude == 32.7174209
 	assert longitude == -117.1627714
 
 def test_get_lat_long_uses_other_args():
-	latitude, longitude = places.get_lat_long(None, None, None, None, "San Diego", "CA")
+	latitude, longitude = places.get_lat_long(None, None, None, None, "San Diego", "CA", None)
 	assert latitude == 32.7174209
 	assert longitude == -117.1627714

@@ -9,8 +9,10 @@ def get_query(neighborhood, city, state, country):
 	valid_args = [arg for arg in all_args if arg is not None]
 	if len(valid_args) > 1:
 		return " ".join(valid_args)
-	else:
+	elif len(valid_args) == 1:
 		return valid_args[0]
+	else:
+		raise Exception("No location input provided")
 
 def get_lat_long_from_osm(query):
 	"""Leverage open source OpenStreetMap API for geocoding"""

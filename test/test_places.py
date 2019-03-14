@@ -45,7 +45,16 @@ def test_get_lat_long_location_overrides_other_args():
 	assert latitude == 32.7174209
 	assert longitude == -117.1627714
 
-def test_get_lat_long_uses_other_args():
+def test_get_lat_long_uses_city_and_state():
 	latitude, longitude = places.get_lat_long(None, None, None, None, "San Diego", "CA", None)
 	assert latitude == 32.7174209
 	assert longitude == -117.1627714
+
+def test_get_lat_long_uses_neighborhood_city_and_state():
+	latitude, longitude = places.get_lat_long(None, None, None, "University Heights", "San Diego", "CA", None)
+	assert latitude == 32.757194
+	assert longitude == -117.1460431
+
+def test_get_lat_long_missing_all_input():
+	with pytest.raises(Exception):
+		places.get_lat_long(None, None, None, None, None, None, None)

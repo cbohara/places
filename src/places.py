@@ -3,14 +3,33 @@ import requests
 import json
 from geopy.geocoders import Nominatim
 
-def get_lat_long(lat_long, location):
-	"""Get latitude and longitude for API search"""
-	if lat_long:
-		return (float(value) for value in config.lat_long.split(","))
+def get_query(*args):
+	"""Piece together location options for a location query"""
+	if len(args) == 1:
+		return str(args[0])
 	else:
-		geolocator = Nominatim()
-		location = geolocator.geocode(config.location)
-		return (location.latitude, location.longitude)
+		valid_args = [arg for arg in args if arg is not None]
+		return " ".join(valid_args)
+
+def get_lat_long_from_osm(query):
+	"""Leverage open source OpenStreetMap API for geocoding"""
+	geolocator = Nominatim(user_agent="my-application")
+	response = geolocator.geocode(query)
+	if response:
+		return (response.latitude, response.longitude)
+	else:
+		raise Exception("Unable to generate latitude and longitude from location input")
+
+def get_lat_long(latitude, longitude, location, *args):
+	"""Get latitude and longitude for Here API search"""
+	if latitude and longitude:
+		return (float(latitude), float(longitude))
+	else:
+		if location:
+			query = location
+		else:
+			query = get_query(args)
+		return get_lat_long_from_osm(query)
 
 def write_json(json_data, search, latitude, longitude):
 	"""Write places to csv file"""
@@ -76,7 +95,7 @@ def write_csv(search, latitude, longitude, places):
 			f.write(line+"\n")
 
 def execute(config):
-	latitude, longitude = get_lat_long(config.lat_long, config.location)
+	latitude, longitude = get_lat_long(config.latitude, config.longitude, config.location, config.neighborhood, config.city, config.state, config.country)
 	app_id = config.app_id
 	app_code = config.app_code
 	search = config.search
@@ -101,9 +120,14 @@ if __name__ == "__main__":
 	api.add('--search', help='specify search word or specific location')
 	api.add('--api_enabled', default=False, help='for testing use local json file to avoid another API call', action='store_true')
 
-	geocode = config_parser.add_mutually_exclusive_group(required=True)
-	geocode.add('--lat_long', help='specific latitude,longitude as a single value "32.8242404,-117.389167"')
+	geocode = config_parser.add_argument_group()
+	geocode.add('--latitude', help='specific start latitude')
+	geocode.add('--longitude', help='specific start longitude')
 	geocode.add('--location', help='location to search around - does not have to be a specific address')
+	geocode.add('--neighborhood', help='neighborhood to search within')
+	geocode.add('--city', help='city to search within')
+	geocode.add('--state', help='state to search within')
+	geocode.add('--country', help='country to search within')
 
 	storage = config_parser.add_argument_group()
 	storage.add('--save_json', default=True, help='save json from here API')

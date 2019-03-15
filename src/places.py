@@ -1,4 +1,5 @@
 import sys
+import re
 import requests
 import json
 from geopy.geocoders import Nominatim
@@ -113,7 +114,13 @@ def execute(config):
 		if config.save_json:
 			write_json(all_json, search, latitude, longitude)
 	else:
-		json = read_json(search, latitude, longitude)
+		all_json = read_json(search, latitude, longitude)
+		all_dict = [json_to_dict(json) for json in all_json]
+		for index, dict_data in enumerate(all_dict):
+			if index == 0:
+				all_places.extend(dict_data["results"]["items"])
+			else:
+				all_places.extend(dict_data["items"])
 
 	if config.save_csv:
 		write_csv(search, latitude, longitude, all_places)

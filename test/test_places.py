@@ -20,18 +20,17 @@ def test_get_lat_long_from_osm_city_only():
 	assert longitude == -117.1627714
 
 def test_get_lat_long_from_lat_long_arg():
-	latitude = "32.8242404"
-	longitude = "-117.389167"
-	latitude, longitude = places.get_lat_long(latitude, longitude, None)
+	lat_long = "32.8242404,-117.389167"
+	latitude, longitude = places.get_lat_long(lat_long, None)
 	assert latitude == 32.8242404
 	assert longitude == -117.389167
 
 def test_get_lat_long_from_location():
 	location = "Pacific Beach San Diego"
-	latitude, longitude = places.get_lat_long(None, None, location)
+	latitude, longitude = places.get_lat_long(None, location)
 	assert latitude == 32.7978268
 	assert longitude == -117.2403183
 
 def test_get_lat_long_missing_all_input():
 	with pytest.raises(Exception):
-		places.get_lat_long(None, None, None)
+		places.get_lat_long(None, None)

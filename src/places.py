@@ -15,10 +15,13 @@ def get_lat_long_from_osm(location):
 
 def get_lat_long(lat_long, location):
 	"""Get latitude and longitude for Here API search"""
-	if latitude and longitude:
+	if lat_long:
+		latitude, longitude = lat_long.split(',')
 		return (float(latitude), float(longitude))
 	elif location:
 		return get_lat_long_from_osm(location)
+	else:
+		raise Exception("Did not provide location input")
 
 def write_json(json_data, search, latitude, longitude):
 	"""Write places to csv file"""

@@ -73,7 +73,7 @@ def write_json(all_json, search, latitude, longitude):
 
 def get_fields(place):
 	"""Get line to write to output csv"""
-	name = re.sub(place["title"], ',', '')
+	name = re.sub(',', '', place["title"])
 	category = place["category"]["id"]
 	street, city, state, zipcode = parse_address(place)
 	latitude, longitude = place["position"]
@@ -84,6 +84,7 @@ def write_csv(search, latitude, longitude, places):
 	"""Write places to csv file"""
 	with open("csv/{}.{}.{}.csv".format(search, latitude, longitude), "w") as f:
 		header = 'name,street,city,state,zipcode,latitude,longitude,category'
+		f.write(header + "\n")
 		for place in places:
 			line = get_fields(place)
 			f.write(line + "\n")

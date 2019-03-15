@@ -14,7 +14,7 @@ def get_lat_long_from_osm(location):
 		raise Exception("Unable to generate latitude and longitude from location input")
 
 def get_lat_long(lat_long, location):
-	"""Get latitude and longitude for Here API search"""
+	"""Get latitude and longitude"""
 	if lat_long:
 		latitude, longitude = lat_long.split(',')
 		return (float(latitude), float(longitude))
@@ -24,7 +24,7 @@ def get_lat_long(lat_long, location):
 		raise Exception("Did not provide location input")
 
 def get_here_start_url(app_id, app_code, search, latitude, longitude):
-	"""Get json data from here API and save to local file if enabled"""
+	"""Get here API start URL"""
 	url = "https://places.cit.api.here.com/places/v1/browse?"
 	if search:
 		url += "&q={}".format(search)
@@ -36,6 +36,9 @@ def get_here_start_url(app_id, app_code, search, latitude, longitude):
 def get_here_json(url):
 	"""Get here API json data"""
 	return requests.get(url).text
+
+def json_to_dict(json_data):
+	return json.loads(json_data)
 
 def parse_address(place):
 	"""Parse field contaning address data"""
@@ -56,15 +59,6 @@ def parse_address(place):
 			street = address[0]
 			return (street, '', '', '')
 
-def get_fields(place):
-	"""Get line to write to output csv"""
-	name = place["title"]
-	category = place["category"]["id"]
-	street, city, state, zipcode = parse_address(place)
-	lat, lon = place["position"]
-	to_write = [name, street, city, state, str(zipcode), str(lat), str(lon), category]
-	return ','.join(to_write)
-
 def read_json(search, latitude, longitude):
 	"""Read in json file to avoid API call"""
 	with open("json/{}.{}.{}.json".format(search, latitude, longitude), "r") as f:
@@ -76,6 +70,15 @@ def write_json(all_json, search, latitude, longitude):
 		for json in all_json:
 			f.write(json + "\n")
 
+def get_fields(place):
+	"""Get line to write to output csv"""
+	name = place["title"]
+	category = place["category"]["id"]
+	street, city, state, zipcode = parse_address(place)
+	latitude, longitude = place["position"]
+	to_write = [name, street, city, state, str(zipcode), str(latitude), str(longitude), category]
+	return ','.join(to_write)
+
 def write_csv(search, latitude, longitude, places):
 	"""Write places to csv file"""
 	with open("csv/{}.{}.{}.csv".format(search, latitude, longitude), "w") as f:
@@ -83,9 +86,6 @@ def write_csv(search, latitude, longitude, places):
 		for place in places:
 			line = get_fields(place)
 			f.write(line + "\n")
-
-def json_to_dict(json_data):
-	return json.loads(json_data)
 
 def execute(config):
 	latitude, longitude = get_lat_long(config.lat_long, config.location)

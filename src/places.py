@@ -23,12 +23,7 @@ def get_lat_long(lat_long, location):
 	else:
 		raise Exception("Did not provide location input")
 
-def write_json(json_data, search, latitude, longitude):
-	"""Write places to csv file"""
-	with open("json/{}.{}.{}.json".format(search, latitude, longitude), "w") as f:
-		f.write(json_data)
-
-def get_here_api_data(app_id, app_code, search, latitude, longitude):
+def get_here_start_url(app_id, app_code, search, latitude, longitude):
 	"""Get json data from here API and save to local file if enabled"""
 	url = "https://places.cit.api.here.com/places/v1/browse?"
 	if search:
@@ -36,16 +31,11 @@ def get_here_api_data(app_id, app_code, search, latitude, longitude):
 	if latitude and longitude:
 		url += "&at={},{}".format(latitude, longitude)
 	url += "&app_id={}&app_code={}".format(app_id, app_code)
-	json_data = requests.get(url).text
+	return url
 
-	if config.save_json:
-		write_json(json_data, search, latitude, longitude)
-	return json_data
-
-def get_places(json_data):
-	"""Get places from here API json data"""
-	dict_data = json.loads(json_data)
-	return dict_data["results"]["items"]
+def get_here_json(url):
+	"""Get here API json data"""
+	return requests.get(url).text
 
 def parse_address(place):
 	"""Parse field contaning address data"""
@@ -78,7 +68,13 @@ def get_fields(place):
 def read_json(search, latitude, longitude):
 	"""Read in json file to avoid API call"""
 	with open("json/{}.{}.{}.json".format(search, latitude, longitude), "r") as f:
-		return f.read()
+		return f.readlines()
+
+def write_json(all_json, search, latitude, longitude):
+	"""Write places to csv file"""
+	with open("json/{}.{}.{}.json".format(search, latitude, longitude), "w") as f:
+		for json in all_json:
+			f.write(json + "\n")
 
 def write_csv(search, latitude, longitude, places):
 	"""Write places to csv file"""
@@ -86,7 +82,10 @@ def write_csv(search, latitude, longitude, places):
 		header = 'name,street,city,state,zipcode,latitude,longitude,category'
 		for place in places:
 			line = get_fields(place)
-			f.write(line+"\n")
+			f.write(line + "\n")
+
+def json_to_dict(json_data):
+	return json.loads(json_data)
 
 def execute(config):
 	latitude, longitude = get_lat_long(config.lat_long, config.location)
@@ -94,13 +93,30 @@ def execute(config):
 	app_code = config.app_code
 	search = config.search
 
+	all_json = []
+	all_places = []
 	if config.api_enabled:
-		places = get_places(get_here_api_data(app_id, app_code, search, latitude, longitude, config))
+		url = get_here_start_url(app_id, app_code, search, latitude, longitude)
+
+		for page in range(1, config.api_calls + 1):
+			json_data = get_here_json(url)
+			all_json.append(json_data)
+			dict_data = json_to_dict(json_data)
+
+			if page == 1:
+				url = dict_data["results"]["next"]
+				all_places.extend(dict_data["results"]["items"])
+			else:
+				url = dict_data["next"]
+				all_places.extend(dict_data["items"])
+
+		if config.save_json:
+			write_json(all_json, search, latitude, longitude)
 	else:
-		places = get_places(read_json(search, latitude, longitude))
+		json = read_json(search, latitude, longitude)
 
 	if config.save_csv:
-		write_csv(search, latitude, longitude, places)
+		write_csv(search, latitude, longitude, all_places)
 
 
 if __name__ == "__main__":
@@ -113,6 +129,7 @@ if __name__ == "__main__":
 	api.add('--app_code', required=True, help='here API app code')
 	api.add('--search', help='specify search word or specific location')
 	api.add('--api_enabled', default=False, help='for testing use local json file to avoid another API call', action='store_true')
+	api.add('--api_calls', type=int, default=1, help='number of next pages to gather data from')
 
 	geocode = config_parser.add_mutually_exclusive_group(required=True)
 	geocode.add('--lat_long', help='specific start latitude,longitude')

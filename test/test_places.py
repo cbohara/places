@@ -19,6 +19,10 @@ def test_get_lat_long_from_osm_city_only():
 	assert latitude == 32.7174209
 	assert longitude == -117.1627714
 
+@pytest.mark.now
+def test_get_location_from_osm():
+	places.get_location_from_osm(32.7174209, -117.1627714)
+
 def test_get_lat_long_from_lat_long_arg():
 	lat_long = "32.8242404,-117.389167"
 	latitude, longitude = places.get_lat_long(lat_long, None)
